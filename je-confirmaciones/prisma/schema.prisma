@@ -1,0 +1,50 @@
+// Esquema de base de datos — JE Aguirre Consultores
+// Motor por defecto: SQLite para desarrollo local.
+// Para producción, cambia "provider" a "postgresql" y usa una DATABASE_URL de Postgres
+// (ver .env.example). El resto del esquema no necesita cambios.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  // Token único, impredecible, usado en la URL pública (/confirmar/TOKEN).
+  // Generado con un generador aleatorio criptográfico (ver lib/token.ts).
+  token     String   @unique
+
+  clientName  String
+  clientEmail String
+  clientPhone String?
+
+  advisorName String
+
+  // Guardamos fecha y hora como texto de despliegue (para mostrar tal cual al cliente)
+  // y también como fecha real (para poder generar el archivo .ics y ordenar/filtrar).
+  appointmentDate DateTime
+  displayDate     String // ej. "Jueves 2 de octubre de 2026"
+  displayTime     String // ej. "10:00 AM"
+  timezone        String @default("America/Mexico_City")
+
+  zoomLink String
+
+  status AppointmentStatus @default(PENDING)
+
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([appointmentDate])
+}
